@@ -1,0 +1,5 @@
+[workspace]
+members = [
+    "src/router/",
+    "src/user_vault/"
+]

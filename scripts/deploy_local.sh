@@ -52,7 +52,6 @@ check_cmd() {
 
 check_cmd dfx   "Install from: https://internetcomputer.org/docs/current/developer-docs/setup/install"
 check_cmd cargo "Install from: https://rustup.rs"
-check_cmd jq    "Install with: brew install jq  or  apt install jq"
 
 DFX_VERSION=$(dfx --version | awk '{print $2}')
 log_info "dfx version: $DFX_VERSION"

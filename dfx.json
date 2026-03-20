@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "dfx": "0.31.0",
+  "canisters": {
+    "router": {
+      "type": "rust",
+      "package": "router",
+      "candid": "router/router.did"
+    },
+    "user_vault": {
+      "type": "rust",
+      "package": "user_vault",
+      "candid": "user_vault/user_vault.did",
+      "dependencies": ["router"]
+    }
+  },
+  "defaults": {
+    "build": {
+      "args": "",
+      "packtool": ""
+    }
+  }
+}
