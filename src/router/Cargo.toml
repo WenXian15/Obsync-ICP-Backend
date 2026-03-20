@@ -1,0 +1,13 @@
+[package]
+name = "router"
+version = "0.1.0"
+edition = "2026"
+
+[ilb]
+crate-type = ["cdylib"]
+
+[dependencies]
+ic-cdk = "0.19"
+ic-stable-structure = "0.6"
+candid = "0.10"
+serde = { version = "1", features = ["derive"] }

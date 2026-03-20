@@ -1,0 +1,10 @@
+[package]
+name = "router"
+version = "0.1.0"
+edition = "2026"
+
+[ilb]
+
+[dependencies]
+candid = "0.10"
+ic-cdk = "0.19"

@@ -1,0 +1,166 @@
+// ── Primitive aliases ─────────────────────────────────────────────────────────
+
+type FilePath   = text;          // e.g. "Daily/2026-03-13.md"
+type DeviceId   = text;          // stable identifier per device, e.g. UUID
+type ContentHash = text;         // hex-encoded SHA-256 of the encrypted blob
+type Timestamp  = nat64;         // Unix epoch, nanoseconds (ICP standard)
+
+
+// ── Vector clock ──────────────────────────────────────────────────────────────
+//
+// A vector clock is a map from DeviceId → monotonic counter.
+// Each push_file call increments the calling device's entry.
+// pull_changes compares the caller's clock against the stored clock to find
+// every file that has changed since the caller last synced.
+
+type VectorClock = vec record {
+    device_id : DeviceId;
+    counter   : nat64;
+};
+
+
+// ── File record (index entry, no blob) ───────────────────────────────────────
+//
+// Stored in the canister's file index.
+// Blobs are never returned by list_files — only by pull_changes.
+
+type FileRecord = record {
+    path         : FilePath;
+    content_hash : ContentHash;
+    size_bytes   : nat64;
+    modified_ts  : Timestamp;
+    device_id    : DeviceId;      // last writer
+    vector_clock : VectorClock;
+    conflicted   : bool;          // true when two devices diverged
+};
+
+
+// ── File with blob (used in pull_changes response) ───────────────────────────
+
+type FileBlob = record {
+    record_   : FileRecord;       // metadata
+    encrypted_bytes : blob;       // AES-256-GCM ciphertext — canister is blind
+};
+
+
+// ── push_file input ───────────────────────────────────────────────────────────
+
+type PushFileRequest = record {
+    path            : FilePath;
+    encrypted_bytes : blob;        // encrypted before it leaves the device
+    device_id       : DeviceId;
+    vector_clock    : VectorClock; // caller's current clock at time of write
+};
+
+
+// ── pull_changes input ────────────────────────────────────────────────────────
+//
+// The caller passes its last-known vector clock.
+// The canister returns every file whose stored clock is strictly greater
+// on any dimension — i.e. changed since the caller last saw it.
+
+type PullChangesRequest = record {
+    device_id         : DeviceId;
+    last_vector_clock : VectorClock;
+};
+
+
+// ── resolve_conflict input ────────────────────────────────────────────────────
+
+type ResolveConflictRequest = record {
+    path           : FilePath;
+    chosen_version : nat8;   // 0 = version A, 1 = version B
+};
+
+
+// ── Generic result types ──────────────────────────────────────────────────────
+
+type ObSyncError = variant {
+    NotFound       : text;   // file or resource does not exist
+    Unauthorized;            // caller is not the vault owner
+    ConflictExists : text;   // unresolved conflict blocks this operation
+    InvalidInput   : text;   // malformed request field
+    StorageFull;             // canister has no room for the blob
+    InternalError  : text;   // catch-all for unexpected failures
+};
+
+type PushResult    = variant { Ok : FileRecord; Err : ObSyncError };
+type PullResult    = variant { Ok : vec FileBlob; Err : ObSyncError };
+type ListResult    = variant { Ok : vec FileRecord; Err : ObSyncError };
+type ResolveResult = variant { Ok : FileRecord; Err : ObSyncError };
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Service definition
+// ─────────────────────────────────────────────────────────────────────────────
+
+service user_vault : {
+
+    // ── push_file ─────────────────────────────────────────────────────────────
+    //
+    // Upload one encrypted file from a device.
+    //
+    // Behaviour (to be implemented in Phase 2):
+    //   • Store the encrypted blob keyed by content_hash.
+    //   • Update the file index entry for `path`.
+    //   • Increment the calling device's vector clock entry.
+    //   • If the incoming vector clock diverges from the stored clock,
+    //     flag the file as conflicted and retain both versions.
+    //
+    // Returns the updated FileRecord on success.
+
+    push_file : (PushFileRequest) -> (PushResult);
+
+
+    // ── pull_changes ──────────────────────────────────────────────────────────
+    //
+    // Fetch all files that have changed since the caller's last sync.
+    //
+    // Behaviour (to be implemented in Phase 2):
+    //   • Compare last_vector_clock with the stored clock for every file.
+    //   • Return FileBlob (metadata + ciphertext) for every file where the
+    //     stored clock is strictly newer on at least one device dimension.
+    //   • Include conflicted files — the plugin decides how to surface them.
+    //
+    // Returns a (possibly empty) list of changed files with their blobs.
+
+    pull_changes : (PullChangesRequest) -> (PullResult) query;
+
+
+    // ── list_files ────────────────────────────────────────────────────────────
+    //
+    // Return the full file index — paths + metadata, no blobs.
+    //
+    // Behaviour (to be implemented in Phase 2):
+    //   • Return all FileRecord entries in the index.
+    //   • Useful for the plugin's file browser and conflict badge.
+    //
+    // This is a query call: read-only, fast, no consensus required.
+
+    list_files : () -> (ListResult) query;
+
+
+    // ── resolve_conflict ─────────────────────────────────────────────────────
+    //
+    // Accept a user's choice for a conflicted file and clear the conflict flag.
+    //
+    // Behaviour (to be implemented in Phase 5):
+    //   • Look up the two stored versions for `path`.
+    //   • Promote the chosen version as the canonical file record.
+    //   • Discard the other version.
+    //   • Clear the `conflicted` flag and update the vector clock.
+    //
+    // Returns the resolved FileRecord on success.
+
+    resolve_conflict : (ResolveConflictRequest) -> (ResolveResult);
+
+    // Wipes all file blobs, the index, and version history from stable memory
+    // Canister remains alive and callable - just empty.
+    clear_vault : () -> (variant { ok; err : text} );
+
+    // Prepares the canister for deletion: drains remaining cycles back to a 
+    // target canister (e.g. the router or a user-supplied wallet), then 
+    // signals it's ready to be stopped and deleted by the controller.
+    drain_and_prepare_delete : (refund_target : principal) -> (variant { ok : nat; err : text });
+    // Returns the number of cycles refunded
+}
