@@ -40,8 +40,8 @@ impl Storable for StorablePrincipal {
         Cow::Owned(self.0.as_slice().to_vec())
     }
 
-    fn into_bytes(self) -> Cow<[u8]> {
-        Cow::Owned(self.0.as_slice().to_vec())
+    fn into_bytes(self) -> Vec<u8> {
+        self.0.as_slice().to_vec()
     }
 
     fn from_bytes(bytes: Cow<[u8]>) -> Self {
