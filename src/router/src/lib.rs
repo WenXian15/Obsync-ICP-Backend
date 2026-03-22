@@ -6,6 +6,8 @@ use ic_stable_structures::{
 };
 use std::cell::RefCell;
 
+type Memory = VirtualMemory<DefaultMemoryImpl>;
+
 // A BTreeMap stored in stable memory — survives canister upgrades.
 // Key:   Principal  (the user's Internet Identity principal)
 // Value: Principal  (their vault canister ID — canisters are addressed by principal)
@@ -35,6 +37,10 @@ struct StorablePrincipal(Principal);
 
 impl Storable for StorablePrincipal {
     fn to_bytes(&self) -> Cow<[u8]> {
+        Cow::Owned(self.0.as_slice().to_vec())
+    }
+
+    fn into_bytes(self) -> Cow<[u8]> {
         Cow::Owned(self.0.as_slice().to_vec())
     }
 

@@ -5,12 +5,12 @@
     "router": {
       "type": "rust",
       "package": "router",
-      "candid": "router/router.did"
+      "candid": "candid/router.did"
     },
     "user_vault": {
       "type": "rust",
       "package": "user_vault",
-      "candid": "user_vault/user_vault.did",
+      "candid": "candid/user_vault.did",
       "dependencies": ["router"]
     }
   },

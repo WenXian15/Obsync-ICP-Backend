@@ -1,9 +1,10 @@
 [package]
-name = "router"
+name = "user_vault"
 version = "0.1.0"
 edition = "2021"
 
-[ilb]
+[lib]
+crate-type = ["cdylib"]
 
 [dependencies]
 candid = "0.10"

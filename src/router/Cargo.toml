@@ -3,11 +3,12 @@ name = "router"
 version = "0.1.0"
 edition = "2021"
 
-[ilb]
+[lib]
 crate-type = ["cdylib"]
 
 [dependencies]
 ic-cdk = "0.19"
-ic-stable-structure = "0.6"
+ic-stable-structures = "0.7.2"
+ic-cdk-macros = "0.18.3"
 candid = "0.10"
 serde = { version = "1", features = ["derive"] }
