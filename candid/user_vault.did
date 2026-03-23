@@ -156,11 +156,11 @@ service user_vault : {
 
     // Wipes all file blobs, the index, and version history from stable memory
     // Canister remains alive and callable - just empty.
-    clear_vault : () -> (variant { ok; err : text} );
+    clear_vault : () -> (variant { Ok; Err : text} );
 
     // Prepares the canister for deletion: drains remaining cycles back to a 
     // target canister (e.g. the router or a user-supplied wallet), then 
     // signals it's ready to be stopped and deleted by the controller.
-    drain_and_prepare_delete : (refund_target : principal) -> (variant { ok : nat; err : text });
+    drain_and_prepare_delete : (refund_target : principal) -> (variant { Ok : nat64; Err : text });
     // Returns the number of cycles refunded
 }
