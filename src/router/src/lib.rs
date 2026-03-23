@@ -81,7 +81,7 @@ fn get_vault_id() -> LookupResult {
 }
 
 // Returns true if the caller already has a registered vault
-#[update]
+#[query]
 fn is_registered() -> bool {
     let user = StorablePrincipal(caller());
 

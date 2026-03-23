@@ -4,40 +4,25 @@
 type CanisterId = principal;
 
 type RegisterResult = variant {
-    Ok  : CanisterId;
-    err : text;
-}
+    Ok : CanisterId;
+    Err : text;
+};
 
 type LookupResult = variant {
-    ok  : CanisterId;
-    err : text; // "not_found" | "Unauthorized"
-}
+    Ok : CanisterId;
+    Err : text;
+};
 
 service : {
-
-    // Returns the caller's vault canister ID
-    // Creates a new user_vault canister and registers it if one does not exists yet
-    // This is the primary entry point - clients call this on every login 
-    get_or_create_vault : () -> (RegusterResult);
-
     // Read-only lookup - returns the vault canister ID for the caller.
-    // Return err ("not_found") if the caller has never registered
-    get_vault_id : () -> (LookupResult)  query;
+    get_vault_id : () -> (LookupResult) query;
 
     // Returns true if the caller already has a registered vault
     is_registered : () -> (bool) query;
 
     // Allows a caller to manually register an existing canister ID
-    // (useful if the user deployed their own vault canister independently)
     register_vault : (CanisterId) -> (RegisterResult);
 
     // Removes the caller's vault registration from the router
-    // Does NOT delete the underlying canister - the user retain ownership
-    delete_vault_registration : () -> (variant {ok; err : text});
-
-    // Unregisters AND stops + deletes the user's vault canister entirely 
-    // Irreversible - all encrypted data is permanently destroyed
-    // The router reclaims any cycles it frontend for the canister
-    delete_vault : () -> (variant { ok; error :text });
-}
-
+    delete_vault_registration : () -> (variant { Ok; Err : text });
+};
